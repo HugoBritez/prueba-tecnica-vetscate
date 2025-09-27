@@ -14,12 +14,19 @@ services:
       - NODE_ENV=development
       - JWT_SECRET=development-secret-key-change-in-production
       - PORT=3000
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USERNAME=vetscate
+      - DB_PASSWORD=vetscate123
+      - DB_NAME=vetscate_reservations
     volumes:
       - .:/usr/src/app
       - /usr/src/app/node_modules
-      - ./database.sqlite:/usr/src/app/database.sqlite
     networks:
       - app-network
+    depends_on:
+      postgres:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "node", "healthcheck.js"]
       interval: 30s
@@ -27,9 +34,31 @@ services:
       retries: 3
       start_period: 40s
 
+  postgres:
+    image: postgres:15-alpine
+    container_name: vetscate-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: vetscate_reservations
+      POSTGRES_USER: vetscate
+      POSTGRES_PASSWORD: vetscate123
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vetscate -d vetscate_reservations"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
 networks:
   app-network:
     driver: bridge
 
 volumes:
   node_modules:
+  postgres_data:

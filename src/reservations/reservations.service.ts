@@ -74,7 +74,7 @@ export class ReservationsService {
   private async validateRoomExists(roomId: number): Promise<void> {
     const room = await this.roomsService.findById(roomId);
     if (!room) {
-      throw new NotFoundException('Room not found'); 
+      throw new NotFoundException('Room not found');
     }
   }
 

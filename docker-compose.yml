@@ -19,6 +19,7 @@ services:
       - DB_USERNAME=vetscate
       - DB_PASSWORD=vetscate123
       - DB_NAME=vetscate_reservations
+      - REDIS_URL=redis://redis:6379
     volumes:
       - .:/usr/src/app
       - /usr/src/app/node_modules
@@ -26,6 +27,8 @@ services:
       - app-network
     depends_on:
       postgres:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "node", "healthcheck.js"]
@@ -55,6 +58,24 @@ services:
       retries: 5
       start_period: 30s
 
+  redis:
+    image: redis:7-alpine
+    container_name: vetscate-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
 networks:
   app-network:
     driver: bridge
@@ -62,3 +83,4 @@ networks:
 volumes:
   node_modules:
   postgres_data:
+  redis_data:

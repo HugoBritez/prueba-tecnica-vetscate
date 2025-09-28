@@ -1,13 +1,17 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { RoomsModule } from './rooms/rooms.module';
 import { ReservationsModule } from './reservations/reservations.module';
+import { HealthModule } from './health/health.module';
+import { ObservabilityModule } from './observability/observability.module';
+import { RedisCacheModule } from './cache/cache.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
+import { MetricsInterceptor } from './observability/metrics.interceptor';
 
 @Module({
   imports: [
@@ -26,6 +30,9 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
     UsersModule,
     RoomsModule,
     ReservationsModule,
+    HealthModule,
+    ObservabilityModule,
+    RedisCacheModule,
   ],
   controllers: [AppController],
   providers: [
@@ -34,6 +41,11 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
     },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: MetricsInterceptor,
+    },
   ],
 })
 export class AppModule {}
+// Updated at Sat Sep 27 20:31:40 -03 2025

@@ -9,6 +9,7 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { ReservationsService } from './reservations.service';
+import { ReservationTransactionService } from './services/reservation-transaction.service';
 import { CreateReservationDto } from './dto/create-reservation.dto';
 import { ReservationResponseDto } from './dto/reservation-response.dto';
 import { AdminGuard } from './guards/admin.guard';
@@ -24,16 +25,26 @@ interface AuthenticatedUser {
 @ApiBearerAuth()
 @Controller('reservations')
 export class ReservationsController {
-  constructor(private readonly reservationsService: ReservationsService) {}
+  constructor(
+    private readonly reservationsService: ReservationsService,
+    private readonly reservationTransactionService: ReservationTransactionService,
+  ) {}
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: 'Create a new reservation' })
+  @ApiOperation({
+    summary: 'Create a new reservation with race condition protection',
+    description:
+      'Uses pessimistic locking and SERIALIZABLE transactions to prevent concurrent booking conflicts',
+  })
   async create(
     @Body() createReservationDto: CreateReservationDto,
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<ReservationResponseDto> {
-    return this.reservationsService.create(createReservationDto, user.userId);
+    return this.reservationTransactionService.createReservationWithLocking(
+      createReservationDto,
+      user.userId,
+    );
   }
 
   @Get()
